@@ -12,7 +12,7 @@ module.exports = {
       resolve: `gatsby-source-decoupla`,
       options: {
         workspace: `your_workspace_id`,
-	      token: `your_token`
+	token: `your_token`
       },
     },
   ],
