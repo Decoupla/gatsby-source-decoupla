@@ -4,7 +4,7 @@ This plugin is based on `gatsby-source-graphql`.
 
 # Usage
 
-js```
+```js
 // gatsby-config.js
 module.exports = {
   plugins: [
@@ -21,7 +21,7 @@ module.exports = {
 
 # Querying data
 
-graphql```
+```graphql
 query {
 	Decoupla {
 		...your data would be avilable here
