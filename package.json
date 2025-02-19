@@ -1,0 +1,45 @@
+{
+  "name": "gatsby-source-decoupla",
+  "description": "A Gatsby source plugin for Decoupla",
+  "version": "0.1.1",
+  "license": "MIT",
+  "main": "./dist/gatsby-node.js",
+  "files": [
+    "./dist/**/*",
+    "gatsby-node.js"
+  ],
+  "scripts": {
+    "clean": "del-cli dist",
+    "build": "tsc",
+    "develop": "tsc --watch",
+    "test": "jest",
+    "prepare": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "gatsby",
+    "gatsby-plugin",
+    "decoupla"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@apollo/client": "^3.13.1",
+    "@graphql-tools/links": "^9.0.22",
+    "@graphql-tools/wrap": "^9.0.22",
+    "dataloader": "^2.2.3",
+    "gatsby": "next",
+    "node-fetch": "^2.6.8"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.4.0",
+    "del-cli": "^5.0.0",
+    "gatsby-plugin-utils": "next",
+    "jest": "^29.4.0",
+    "ts-jest": "^29.0.5",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "gatsby": "^5.0.0"
+  }
+}
