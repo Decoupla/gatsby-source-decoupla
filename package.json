@@ -1,7 +1,7 @@
 {
   "name": "gatsby-source-decoupla",
   "description": "A Gatsby source plugin for Decoupla",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "main": "./dist/gatsby-node.js",
   "files": [

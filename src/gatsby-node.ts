@@ -8,7 +8,7 @@ export interface IPluginOptions {
 }
 
 export const createSchemaCustomization = async (args: CreateSchemaCustomizationArgs, opts: IPluginOptions) => {
-  const endpoint = `https://decoupla.com/public/api/workspace/${opts.workspace}/graphql`
+  const endpoint = `https://api.decoupla.com/public/api/workspace/${opts.workspace}/graphql`
   return createSchemaCustomizationBase(args, {
     typeName: `Decoupla`,
     fieldName: `Decoupla`,
