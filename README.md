@@ -2,6 +2,10 @@
 
 This plugin is based on `gatsby-source-graphql`.
 
+# Documentation
+
+Documentation can be found at: [https://decoupla.com/api-docs/gatsby/gatsby-integration/](https://decoupla.com/api-docs/gatsby/gatsby-integration/)
+
 # Usage
 
 ```js
