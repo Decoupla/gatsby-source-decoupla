@@ -1,8 +1,12 @@
 {
   "name": "gatsby-source-decoupla",
   "description": "A Gatsby source plugin for Decoupla",
-  "version": "0.1.2",
+  "version": "0.1.15",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Decoupla/decoupla-starter.git"
+  },
   "main": "./dist/gatsby-node.js",
   "files": [
     "./dist/**/*",
@@ -28,7 +32,6 @@
     "@graphql-tools/links": "^9.0.22",
     "@graphql-tools/wrap": "^9.0.22",
     "dataloader": "^2.2.3",
-    "gatsby": "next",
     "node-fetch": "^2.6.8"
   },
   "devDependencies": {
