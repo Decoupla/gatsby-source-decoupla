@@ -1,5 +1,5 @@
 import DataLoader from "dataloader"
-import { ApolloLink, Observable } from "@apollo/client"
+import { ApolloLink, Observable } from "@apollo/client/core"
 import { print } from "gatsby/graphql"
 import { merge, resolveResult } from "./marge-queries"
 

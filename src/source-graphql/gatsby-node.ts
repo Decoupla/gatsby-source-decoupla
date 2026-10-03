@@ -1,8 +1,8 @@
-import { uuid } from "gatsby-core-utils"
+import { randomUUID } from "node:crypto"
 import { buildSchema, printSchema } from "gatsby/graphql"
 import { wrapSchema, introspectSchema, RenameTypes } from "@graphql-tools/wrap"
-import { linkToExecutor } from "@graphql-tools/links"
-import { createHttpLink } from "@apollo/client"
+import { linkToExecutor } from "./link-to-executor"
+import { createHttpLink } from "@apollo/client/core"
 import { fetchWrapper } from "./fetch"
 import { NamespaceUnderFieldTransform, StripNonQueryTransform } from "./transforms"
 import { createDataloaderLink } from "./batching/dataloder-link"
@@ -177,7 +177,7 @@ function createSchemaNodeId({ typeName, createNodeId }) {
 }
 
 function createSchemaNode({ id, typeName, fieldName, createContentDigest }) {
-  const nodeContent = uuid.v4()
+  const nodeContent = randomUUID()
 
   const nodeContentDigest = createContentDigest(nodeContent)
 

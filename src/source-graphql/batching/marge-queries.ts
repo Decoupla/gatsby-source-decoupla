@@ -1,6 +1,6 @@
 import { visit, visitInParallel, Kind } from "gatsby/graphql"
 
-import _ from "lodash"
+
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const Prefix = {
@@ -338,7 +338,7 @@ function aliasTopLevelFields(prefix, doc) {
  */
 
 function aliasFieldsInSelection(prefix, selections, document) {
-  return _.flatMap(selections, (selection) => {
+  return selections.flatMap((selection) => {
     switch (selection.kind) {
       case Kind.INLINE_FRAGMENT:
         return [aliasFieldsInInlineFragment(prefix, selection, document)]
