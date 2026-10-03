@@ -1,5 +1,6 @@
 {
   "include": ["./src/**/*"],
+  "exclude": ["src/**/__tests__/**"],
   "compilerOptions": {
     "module": "CommonJS",
     "target": "ES2015",

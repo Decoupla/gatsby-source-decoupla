@@ -14,7 +14,7 @@ npm i gatsby-source-decoupla
 
 # Usage
 
-The `workspace` and `token` can be found in your Workspace API Settings.
+Create an API token in your Workspace API Settings. Give production builds published-read permission (`get_entries`); preview builds need draft-read permission (`get_draft_entries`). Store the token in an environment variable on your build server.
 
 ```js
 // gatsby-config.js
@@ -23,13 +23,17 @@ module.exports = {
     {
       resolve: `gatsby-source-decoupla`,
       options: {
-        workspace: `your_workspace_id`,
-	token: `your_token`
+        workspace: process.env.DECOUPLA_WORKSPACE,
+        token: process.env.DECOUPLA_API_TOKEN,
+        contentView: `live`, // Use `preview` to read draft content
+        requestTimeoutMs: 30000,
       },
     },
   ],
 }
 ```
+
+`contentView` defaults to `live` and is sent explicitly to the API. For preview builds, set it to `preview`, including when using a migrated legacy preview token. The token must have permission for the selected view. Deleting or revoking it causes subsequent builds to fail authorization. Requests, including response bodies, time out after 30 seconds by default.
 
 # Querying data
 
@@ -61,3 +65,24 @@ query {
   }
 }
 ```
+
+
+## Publishing a release
+
+After changes are merged into `main`, open this repository's **Actions → Publish to npm → Run workflow**, select the `main` branch, and choose **patch**, **minor**, or **major**. Publishing is manual; ordinary pushes only run CI.
+
+The workflow bumps the version, builds and tests that version, saves the tested npm package as a workflow artifact, and atomically pushes a version commit and `v<version>` tag. It then publishes that exact archive publicly to npm. If `main` changes while checks run, publishing stops so you can start a fresh run against the new commit. Release runs are serialized.
+
+### One-time setup
+
+In the npm settings for `gatsby-source-decoupla`, add a GitHub Actions trusted publisher:
+
+- Organization/user: `Decoupla`
+- Repository: `gatsby-source-decoupla`
+- Workflow filename: `publish.yml`
+- Environment: leave empty
+- Allowed actions: enable direct `npm publish`
+
+The workflow uses OIDC with Node 24; no npm publish token secret is needed. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/). The repository must allow the workflow's `GITHUB_TOKEN` to push the version commit to `main` and create release tags. If branch rules prevent that push, the workflow stops before npm publication.
+
+If the npm publish job fails after the version commit/tag succeeds, fix the publishing configuration and choose **Re-run failed jobs** on that run. This reuses the tested archive and version without another bump. The artifact is retained for seven days. GitHub and npm are separate services: the version commit/tag can exist even if npm publication fails.
