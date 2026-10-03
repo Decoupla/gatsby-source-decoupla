@@ -27,7 +27,9 @@ try {
     run('yarn', ['node', 'consumer.cjs'])
   } else {
     writeFileSync(path.join(fixture, '.yarnrc.yml'), `nodeLinker: ${mode}\npnpFallbackMode: none\nenableScripts: false\nenableGlobalCache: false\nglobalFolder: ${path.join(fixture, 'global')}\nnpmRegistryServer: "https://registry.npmjs.org"\n`)
-    run('yarn', ['install'])
+    // This isolated fixture intentionally has no checked-in lockfile, so turn
+    // off Yarn's CI immutable-install default while resolving its dependencies.
+    run('yarn', ['install', '--no-immutable'])
     run('yarn', ['node', 'consumer.cjs'])
   }
 } finally { rmSync(fixture, { recursive: true, force: true }) }
