@@ -48,6 +48,47 @@ test('defaults to explicit live reads for new and migrated tokens', async () => 
   expect(fetchMock.mock.calls[0][0]).toContain('?api_type=live')
 })
 
+test.each(['forward', 'backward'])('forwards %s keyset cursors and count metadata through the remote schema', async direction => {
+  const schema = buildSchema(`
+    type Query { allPost(first: Int, last: Int, after: String, before: String, keyset: Boolean = false, countLimit: Int): PostConnection! }
+    type PostConnection { count: Int!, countIsExact: Boolean!, edges: [PostEdge!]!, pageInfo: PageInfo! }
+    type PostEdge { cursor: String!, node: Post! }
+    type Post { id: ID!, title: String! }
+    type PageInfo { startCursor: String, endCursor: String, hasPreviousPage: Boolean!, hasNextPage: Boolean! }
+  `)
+  const calls: any[] = []
+  const introspection = graphqlSync({ schema, source: getIntrospectionQuery() })
+  fetchMock.mockImplementation(async (_url, init) => {
+    const request = JSON.parse(init.body)
+    const result = request.query.includes('__schema') ? introspection : await graphql({
+      schema, source: request.query, variableValues: request.variables,
+      rootValue: { allPost: (args: any) => {
+        calls.push(args)
+        return { count: 1000, countIsExact: false,
+          edges: [{ cursor: 'opaque-edge', node: { id: 'post', title: 'Hello' } }],
+          pageInfo: { startCursor: 'opaque-start', endCursor: 'opaque-end', hasPreviousPage: true, hasNextPage: true } }
+      } },
+    })
+    return new Response(JSON.stringify(result))
+  })
+  const hooks = args()
+  await createSchemaCustomization(hooks, opts)
+  const wrapped = hooks.actions.addThirdPartySchema.mock.calls[0][0].schema
+  const pageArgs = direction === 'forward' ? 'first: 10, after: $cursor' : 'last: 10, before: $cursor'
+  const result = await graphql({ schema: wrapped,
+    source: `query Page($cursor: String!) { Decoupla { allPost(${pageArgs}, keyset: true, countLimit: 1000) {
+      count countIsExact edges { cursor node { id title } }
+      pageInfo { startCursor endCursor hasPreviousPage hasNextPage }
+    } } }`, variableValues: { cursor: 'opaque-input' },
+    contextValue: { nodeModel: { createPageDependency: jest.fn() }, path: '/page' } })
+  expect(result.errors).toBeUndefined()
+  expect(calls).toEqual([direction === 'forward' ? { first: 10, after: 'opaque-input', keyset: true, countLimit: 1000 } :
+    { last: 10, before: 'opaque-input', keyset: true, countLimit: 1000 }])
+  expect((result.data?.Decoupla as any).allPost).toMatchObject({ count: 1000, countIsExact: false,
+    edges: [{ cursor: 'opaque-edge', node: { id: 'post', title: 'Hello' } }],
+    pageInfo: { startCursor: 'opaque-start', endCursor: 'opaque-end' } })
+})
+
 test('plugin options validate views and timeouts', async () => {
   const schema = pluginOptionsSchema({ Joi })
   expect(schema.validate(opts).value.contentView).toBe('live')

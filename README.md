@@ -9,8 +9,11 @@ Documentation can be found at: [https://decoupla.com/api-docs/gatsby/gatsby-inte
 # Installation
 
 ```bash
-npm i gatsby-source-decoupla
+npm i gatsby-source-decoupla graphql
+# Or: yarn add gatsby-source-decoupla graphql
 ```
+
+Use GraphQL 16 alongside Gatsby 5. Yarn Classic, Yarn 4 with node-modules, and strict Yarn 4 Plug’n’Play are covered by packed-package consumer checks in CI.
 
 # Usage
 
@@ -23,7 +26,7 @@ module.exports = {
     {
       resolve: `gatsby-source-decoupla`,
       options: {
-        workspace: process.env.DECOUPLA_WORKSPACE,
+        workspace: process.env.DECOUPLA_WORKSPACE, // Workspace API ID: d + UUID
         token: process.env.DECOUPLA_API_TOKEN,
         contentView: `live`, // Use `preview` to read draft content
         requestTimeoutMs: 30000,
@@ -66,6 +69,40 @@ query {
 }
 ```
 
+
+## Keyset pagination for collection queries
+
+The plugin introspects the remote workspace GraphQL schema and forwards its
+arguments and response fields. After deploying backend keyset support, queries
+can opt into `keyset: true`; existing queries keep their offset behavior.
+
+```graphql
+query BlogPage($after: String) {
+  Decoupla {
+    allBlogArticle(first: 100, after: $after, keyset: true, countLimit: 1000) {
+      count
+      countIsExact
+      edges { cursor node { id title } }
+      pageInfo { startCursor endCursor hasNextPage hasPreviousPage }
+    }
+  }
+}
+```
+
+Use your generated collection/field names. For the next query, pass the returned
+`endCursor` as `$after` while `hasNextPage` is true. For a previous page, use
+`last: 100` with the current `startCursor` as `before`. Keep the query scope
+unchanged and treat cursors as opaque; they expire after seven days. Display a
+capped count as `1000+` when `countIsExact` is false, or omit both count fields
+when they are unnecessary. Page sizes are limited to 1–500 in keyset mode.
+
+The plugin delegates individual queries; it does not automatically traverse all
+pages or create local Gatsby nodes for every entry. A static page query still
+returns only the requested page. Full build-time collection traversal must be
+implemented explicitly, for example with the SDK's
+`iterateEntries(ContentType, { keyset: true })` in your build code. Each site must
+opt in and deploy compatible backend/SDK versions first. Schema introspection
+and forwarding tests cover both forward and backward keyset connections.
 
 ## Publishing a release
 

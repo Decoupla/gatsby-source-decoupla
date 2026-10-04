@@ -84,3 +84,9 @@ Added `.github/workflows/publish.yml` with a manual patch/minor/major selector, 
 - An isolated patch release build passed all package tests and produced a valid npm archive. SDK type tests passed and its packaged CLI reported the bumped version; Gatsby archives excluded test files.
 - Archive metadata parsing handles both npm 11's array and npm 12's package-keyed object formats.
 - Source repository versions remain unchanged. No push, npm publish, or external account configuration was performed during verification.
+
+## Yarn compatibility fixes
+
+Removed undeclared Gatsby UUID and Lodash imports in favor of Node crypto and native arrays; declared GraphQL Tools utilities directly and GraphQL 16 as a host peer. Apollo imports its core entry point. A local link executor replaces the GraphQL Tools links adapter, whose React dependency chain failed under strict Plug’n’Play.
+
+CI packs the built plugin and runs isolated consumers with Yarn Classic 1.22.22, Yarn 4.18.1 node-modules, and strict Yarn 4.18.1 Plug’n’Play. All three passed mocked preview queries, shared GraphQL identity checks, and matching Gatsby dependency IDs. The existing eight tests, TypeScript build, and workflow lint passed. No live API calls were made. These Yarn fixes remain uncommitted and unpublished.
