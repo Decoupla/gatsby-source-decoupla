@@ -30,6 +30,7 @@ module.exports = {
         token: process.env.DECOUPLA_API_TOKEN,
         contentView: `live`, // Use `preview` to read draft content
         requestTimeoutMs: 30000,
+        maxRetries: 5, // Retries for rate-limited requests
       },
     },
   ],
@@ -37,6 +38,8 @@ module.exports = {
 ```
 
 `contentView` defaults to `live` and is sent explicitly to the API. For preview builds, set it to `preview`, including when using a migrated legacy preview token. The token must have permission for the selected view. Deleting or revoking it causes subsequent builds to fail authorization. Requests, including response bodies, time out after 30 seconds by default.
+
+Each workspace may make a fixed number of API requests per minute, set by its plan. When a build exceeds it, the API answers HTTP 429 with a `Retry-After` header. The plugin waits as long as the API asks (at most 60 seconds per wait), logs a warning, and retries, up to `maxRetries` times (default `5`; `0` disables retrying). The timeout applies to each attempt. If the limit is still exceeded after the last retry, the build fails with the API's message.
 
 # Querying data
 

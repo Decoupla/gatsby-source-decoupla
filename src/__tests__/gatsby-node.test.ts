@@ -1,7 +1,7 @@
 import { buildSchema, graphql, graphqlSync, getIntrospectionQuery } from 'graphql'
 import nodeFetch from 'node-fetch'
 import { createSchemaCustomization, sourceNodes, pluginOptionsSchema } from '../gatsby-node'
-import { fetchWrapper } from '../source-graphql/fetch'
+import { fetchWrapper, parseRetryAfter } from '../source-graphql/fetch'
 
 jest.mock('node-fetch', () => {
   const actual = jest.requireActual('node-fetch')
@@ -119,4 +119,55 @@ test('timeout also covers stalled response bodies', async () => {
     init.signal.addEventListener('abort', () => reject(new Error('body aborted')), { once: true })
   }) }))
   await expect(fetchWrapper('https://example.invalid', { timeout: 5 })).rejects.toThrow('timed out after 5ms')
+})
+
+const limited = (retryAfter = '0') => new Response(
+  JSON.stringify({ error: 'Too Many Requests', message: 'This project\'s plan allows 300 API requests per minute.' }),
+  { status: 429, headers: { 'retry-after': retryAfter } },
+)
+
+test('rate-limited requests are retried after Retry-After and reported', async () => {
+  fetchMock
+    .mockResolvedValueOnce(limited())
+    .mockResolvedValueOnce(limited())
+    .mockResolvedValueOnce(new Response(JSON.stringify({ data: { ok: true } })))
+  const onRetry = jest.fn()
+  const response = await fetchWrapper('https://example.invalid', { onRetry })
+  expect(await response.json()).toEqual({ data: { ok: true } })
+  expect(fetchMock).toHaveBeenCalledTimes(3)
+  expect(onRetry).toHaveBeenNthCalledWith(1, { attempt: 1, maxRetries: 5, delayMs: 0 })
+  expect(fetchMock.mock.calls[0][1]).not.toHaveProperty('maxRetries')
+})
+
+test('rate limiting fails the build after maxRetries with the backend message', async () => {
+  fetchMock.mockImplementation(async () => limited())
+  await expect(fetchWrapper('https://example.invalid', { maxRetries: 2 })).rejects.toThrow('HTTP 429: This project\'s plan allows 300')
+  expect(fetchMock).toHaveBeenCalledTimes(3)
+})
+
+test('other failures are not retried', async () => {
+  fetchMock.mockResolvedValue(new Response('{}', { status: 500 }))
+  await expect(fetchWrapper('https://example.invalid', {})).rejects.toThrow('HTTP 500')
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+})
+
+test('plugin rate limit retries are reported through the Gatsby reporter', async () => {
+  fetchMock
+    .mockResolvedValueOnce(limited())
+    .mockResolvedValue(new Response(JSON.stringify(introspection)))
+  const reporter = { warn: jest.fn() }
+  await createSchemaCustomization({ ...args(), reporter }, opts)
+  expect(reporter.warn).toHaveBeenCalledWith(expect.stringContaining('Rate limited by the API; retrying in 0s (attempt 1 of 5)'))
+})
+
+test('maxRetries option is validated', () => {
+  const schema = pluginOptionsSchema({ Joi })
+  expect(schema.validate({ ...opts, maxRetries: -1 }).error).toBeDefined()
+  expect(schema.validate({ ...opts, maxRetries: 0 }).error).toBeUndefined()
+})
+
+test('Retry-After accepts seconds or an HTTP date', () => {
+  expect(parseRetryAfter('12')).toBe(12)
+  expect(parseRetryAfter(new Date(10_000).toUTCString(), 1_000)).toBe(9)
+  expect(parseRetryAfter('soon')).toBeUndefined()
 })
